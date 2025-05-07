@@ -6,7 +6,7 @@ import { useContext } from "react"
 
 import { useAuthenticate } from "../../hooks/use-authenticate"
 import type { AuthLocalization } from "../../lib/auth-localization"
-import { AuthUIContext } from "../../lib/auth-ui-provider"
+import { AuthUIContext, type PasswordValidation } from "../../lib/auth-ui-provider"
 import { cn } from "../../lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
 import { AccountsCard } from "./accounts-card"
@@ -38,9 +38,15 @@ export interface SettingsCardsProps {
     className?: string
     classNames?: SettingsCardsClassNames
     localization?: AuthLocalization
+    passwordValidation?: PasswordValidation
 }
 
-export function SettingsCards({ className, classNames, localization }: SettingsCardsProps) {
+export function SettingsCards({
+    className,
+    classNames,
+    localization,
+    passwordValidation
+}: SettingsCardsProps) {
     useAuthenticate()
 
     const {
@@ -58,10 +64,12 @@ export function SettingsCards({ className, classNames, localization }: SettingsC
         providers,
         settingsFields,
         username,
-        twoFactor
+        twoFactor,
+        passwordValidation: contextPasswordValidation
     } = useContext(AuthUIContext)
 
     localization = { ...contextLocalization, ...localization }
+    passwordValidation = { ...contextPasswordValidation, ...passwordValidation }
 
     const { useListAccounts, useListDeviceSessions, useListPasskeys, useListSessions, useSession } =
         hooks
@@ -224,6 +232,7 @@ export function SettingsCards({ className, classNames, localization }: SettingsC
                             isPending={sessionPending}
                             localization={localization}
                             skipHook
+                            passwordValidation={passwordValidation}
                         />
                     )}
 

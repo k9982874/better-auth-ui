@@ -5,7 +5,7 @@ import { type ReactNode, useContext, useEffect, useState } from "react"
 
 import { useIsHydrated } from "../../hooks/use-hydrated"
 import type { AuthLocalization } from "../../lib/auth-localization"
-import { AuthUIContext } from "../../lib/auth-ui-provider"
+import { AuthUIContext, type PasswordValidation } from "../../lib/auth-ui-provider"
 import type { AuthView } from "../../lib/auth-view-paths"
 import { socialProviders } from "../../lib/social-providers"
 import { cn, getAuthViewByPath } from "../../lib/utils"
@@ -59,6 +59,10 @@ export interface AuthCardProps {
      * @default 0
      */
     otpSeparators?: 0 | 1 | 2
+    /**
+     * Customize the password validation
+     */
+    passwordValidation?: PasswordValidation
 }
 
 export function AuthCard({
@@ -71,7 +75,8 @@ export function AuthCard({
     redirectTo,
     socialLayout = "auto",
     view,
-    otpSeparators = 0
+    otpSeparators = 0,
+    passwordValidation
 }: AuthCardProps) {
     const isHydrated = useIsHydrated()
 
@@ -89,10 +94,12 @@ export function AuthCard({
         signUp,
         viewPaths,
         replace,
-        Link
+        Link,
+        passwordValidation: contextPasswordValidation
     } = useContext(AuthUIContext)
 
     localization = { ...contextLocalization, ...localization }
+    passwordValidation = { ...contextPasswordValidation, ...passwordValidation }
 
     if (socialLayout === "auto") {
         socialLayout = !credentials
@@ -128,6 +135,7 @@ export function AuthCard({
                 localization={localization}
                 className={cn(className)}
                 classNames={classNames?.settings}
+                passwordValidation={passwordValidation}
             />
         )
 
@@ -174,6 +182,7 @@ export function AuthCard({
                             pathname={pathname}
                             redirectTo={redirectTo}
                             setIsSubmitting={setIsSubmitting}
+                            passwordValidation={passwordValidation}
                         />
 
                         {magicLink &&

@@ -5,7 +5,7 @@ import { useContext } from "react"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import type { AuthLocalization } from "../../lib/auth-localization"
-import { AuthUIContext } from "../../lib/auth-ui-provider"
+import { AuthUIContext, type PasswordValidation } from "../../lib/auth-ui-provider"
 import { cn, getLocalizedError } from "../../lib/utils"
 import { PasswordInput } from "../password-input"
 import { CardContent } from "../ui/card"
@@ -20,6 +20,7 @@ export interface ChangePasswordCardProps {
     isPending?: boolean
     localization?: AuthLocalization
     skipHook?: boolean
+    passwordValidation?: PasswordValidation
 }
 
 export function ChangePasswordCard({
@@ -28,7 +29,8 @@ export function ChangePasswordCard({
     accounts,
     isPending,
     localization,
-    skipHook
+    skipHook,
+    passwordValidation
 }: ChangePasswordCardProps) {
     const {
         authClient,
@@ -38,10 +40,12 @@ export function ChangePasswordCard({
         hooks: { useSession, useListAccounts },
         localization: contextLocalization,
         viewPaths,
-        toast
+        toast,
+        passwordValidation: contextPasswordValidation
     } = useContext(AuthUIContext)
 
     localization = { ...contextLocalization, ...localization }
+    passwordValidation = { ...contextPasswordValidation, ...passwordValidation }
 
     const { data: sessionData } = useSession()
 
@@ -51,12 +55,34 @@ export function ChangePasswordCard({
         isPending = result.isPending
     }
 
+    const passwordSchema = (defaultErrorMessage?: string) => {
+        let schema = passwordValidation?.minLength
+            ? z.string().min(passwordValidation.minLength, {
+                message: localization.passwordTooShort
+            })
+            : z.string().min(1, {
+                message: defaultErrorMessage
+            })
+
+        if (passwordValidation?.maxLength) {
+            schema = schema.max(passwordValidation.maxLength, {
+                message: localization.passwordTooLong
+            })
+        }
+        if (passwordValidation?.regex) {
+            schema = schema.regex(passwordValidation.regex, {
+                message: localization.passwordInvalid
+            })
+        }
+        return schema
+    }
+
     const formSchema = z
         .object({
-            currentPassword: z.string().min(1, { message: localization.passwordRequired }),
-            newPassword: z.string().min(1, { message: localization.newPasswordRequired }),
+            currentPassword: passwordSchema(localization.passwordRequired),
+            newPassword: passwordSchema(localization.newPasswordRequired),
             confirmPassword: confirmPasswordEnabled
-                ? z.string().min(1, { message: localization.confirmPasswordRequired })
+                ? passwordSchema(localization.confirmPasswordRequired)
                 : z.string().optional()
         })
         .refine((data) => !confirmPasswordEnabled || data.newPassword === data.confirmPassword, {

@@ -9,7 +9,7 @@ import * as z from "zod"
 import { useIsHydrated } from "../../../hooks/use-hydrated"
 import { useOnSuccessTransition } from "../../../hooks/use-success-transition"
 import type { AuthLocalization } from "../../../lib/auth-localization"
-import { AuthUIContext } from "../../../lib/auth-ui-provider"
+import { AuthUIContext, type PasswordValidation } from "../../../lib/auth-ui-provider"
 import { cn, getLocalizedError, getSearchParam } from "../../../lib/utils"
 import type { AuthClient } from "../../../types/auth-client"
 import { PasswordInput } from "../../password-input"
@@ -27,6 +27,7 @@ export interface SignUpFormProps {
     localization: Partial<AuthLocalization>
     redirectTo?: string
     setIsSubmitting?: (value: boolean) => void
+    passwordValidation?: PasswordValidation
 }
 
 export function SignUpForm({
@@ -36,7 +37,8 @@ export function SignUpForm({
     isSubmitting,
     localization,
     redirectTo,
-    setIsSubmitting
+    setIsSubmitting,
+    passwordValidation
 }: SignUpFormProps) {
     const isHydrated = useIsHydrated()
 
@@ -55,10 +57,12 @@ export function SignUpForm({
         username: usernameEnabled,
         viewPaths,
         navigate,
-        toast
+        toast,
+        passwordValidation: contextPasswordValidation
     } = useContext(AuthUIContext)
 
     localization = { ...contextLocalization, ...localization }
+    passwordValidation = { ...contextPasswordValidation, ...passwordValidation }
 
     const getRedirectTo = useCallback(
         () => redirectTo || getSearchParam("redirectTo") || contextRedirectTo,
@@ -78,6 +82,27 @@ export function SignUpForm({
 
     const { onSuccess, isPending: transitionPending } = useOnSuccessTransition({ redirectTo })
 
+    const passwordSchema = (defaultErrorMessage?: string) => {
+        let schema = passwordValidation?.minLength
+            ? z.string().min(passwordValidation.minLength, {
+                message: localization.passwordTooShort
+            })
+            : z.string().min(1, {
+                message: defaultErrorMessage ?? localization.passwordRequired
+            })
+
+        if (passwordValidation?.maxLength) {
+            schema = schema.max(passwordValidation.maxLength, {
+                message: localization.passwordTooLong
+            })
+        }
+        if (passwordValidation?.regex) {
+            schema = schema.regex(passwordValidation.regex, {
+                message: localization.passwordInvalid
+            })
+        }
+        return schema
+    }
     // Create the base schema for standard fields
     const schemaFields: Record<string, z.ZodTypeAny> = {
         email: z
@@ -88,16 +113,12 @@ export function SignUpForm({
             .email({
                 message: `${localization.email} ${localization.isInvalid}`
             }),
-        password: z.string().min(1, {
-            message: `${localization.password} ${localization.isRequired}`
-        })
+        password: passwordSchema(),
     }
 
     // Add confirmPassword field if enabled
     if (confirmPasswordEnabled) {
-        schemaFields.confirmPassword = z.string().min(1, {
-            message: `${localization.confirmPassword} ${localization.isRequired}`
-        })
+        schemaFields.confirmPassword = passwordSchema(localization.confirmPasswordRequired)
     }
 
     // Add name field if required or included in signUpFields

@@ -3,7 +3,7 @@
 import { useContext, useEffect } from "react"
 
 import type { AuthLocalization } from "../../lib/auth-localization"
-import { AuthUIContext } from "../../lib/auth-ui-provider"
+import { AuthUIContext, type PasswordValidation } from "../../lib/auth-ui-provider"
 import type { AuthView } from "../../lib/auth-view-paths"
 import { getAuthViewByPath } from "../../lib/utils"
 import { AuthCallback } from "./auth-callback"
@@ -47,6 +47,7 @@ export interface AuthFormProps {
     view?: AuthView
     otpSeparators?: 0 | 1 | 2
     setIsSubmitting?: (isSubmitting: boolean) => void
+    passwordValidation?: PasswordValidation
 }
 
 export function AuthForm({
@@ -59,7 +60,8 @@ export function AuthForm({
     redirectTo,
     view,
     otpSeparators = 0,
-    setIsSubmitting
+    setIsSubmitting,
+    passwordValidation
 }: AuthFormProps) {
     const {
         basePath,
@@ -70,10 +72,12 @@ export function AuthForm({
         signUp: signUpEnabled,
         twoFactor: twoFactorEnabled,
         viewPaths,
-        replace
+        replace,
+        passwordValidation: contextPasswordValidation
     } = useContext(AuthUIContext)
 
     localization = { ...contextLocalization, ...localization }
+    passwordValidation = { ...contextPasswordValidation, ...passwordValidation }
 
     const path = pathname?.split("/").pop()
 
@@ -142,6 +146,7 @@ export function AuthForm({
                 redirectTo={redirectTo}
                 isSubmitting={isSubmitting}
                 setIsSubmitting={setIsSubmitting}
+                passwordValidation={passwordValidation}
             />
         ) : magicLink ? (
             <MagicLinkForm
@@ -239,6 +244,7 @@ export function AuthForm({
                 className={className}
                 classNames={classNames}
                 localization={localization}
+                passwordValidation={passwordValidation}
             />
         )
     }
@@ -253,6 +259,7 @@ export function AuthForm({
                     redirectTo={redirectTo}
                     isSubmitting={isSubmitting}
                     setIsSubmitting={setIsSubmitting}
+                    passwordValidation={passwordValidation}
                 />
             )
         )
