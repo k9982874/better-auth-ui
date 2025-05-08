@@ -39,13 +39,15 @@ export interface SettingsCardsProps {
     classNames?: SettingsCardsClassNames
     localization?: AuthLocalization
     passwordValidation?: PasswordValidation
+    changeEmail?: boolean
 }
 
 export function SettingsCards({
     className,
     classNames,
     localization,
-    passwordValidation
+    passwordValidation,
+    changeEmail
 }: SettingsCardsProps) {
     useAuthenticate()
 
@@ -53,7 +55,7 @@ export function SettingsCards({
         additionalFields,
         avatar,
         credentials,
-        changeEmail,
+        changeEmail: contextChangeEmail,
         deleteUser,
         hooks,
         localization: contextLocalization,
@@ -70,6 +72,7 @@ export function SettingsCards({
 
     localization = { ...contextLocalization, ...localization }
     passwordValidation = { ...contextPasswordValidation, ...passwordValidation }
+    changeEmail = changeEmail ?? contextChangeEmail
 
     const { useListAccounts, useListDeviceSessions, useListPasskeys, useListSessions, useSession } =
         hooks
@@ -165,11 +168,12 @@ export function SettingsCards({
                         />
                     )}
 
-                    {changeEmail && (
+                    {(sessionPending || sessionData?.user.email) && (
                         <ChangeEmailCard
                             classNames={classNames?.card}
                             isPending={sessionPending}
                             localization={localization}
+                            readonly={changeEmail === false}
                         />
                     )}
 

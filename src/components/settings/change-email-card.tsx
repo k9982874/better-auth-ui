@@ -8,7 +8,7 @@ import * as z from "zod"
 import type { AuthLocalization } from "../../lib/auth-localization"
 import { AuthUIContext } from "../../lib/auth-ui-provider"
 import { cn, getLocalizedError } from "../../lib/utils"
-import { CardContent } from "../ui/card"
+import { CardContent, CardFooter } from "../ui/card"
 import { Form, FormControl, FormField, FormItem, FormMessage } from "../ui/form"
 import { Input } from "../ui/input"
 import { Skeleton } from "../ui/skeleton"
@@ -19,23 +19,27 @@ export interface ChangeEmailCardProps {
     classNames?: SettingsCardClassNames
     isPending?: boolean
     localization?: AuthLocalization
+    readonly?: boolean
 }
 
 export function ChangeEmailCard({
     className,
     classNames,
     isPending,
-    localization
+    localization,
+    readonly
 }: ChangeEmailCardProps) {
     const {
         authClient,
         emailVerification,
         hooks: { useSession },
         localization: contextLocalization,
-        toast
+        toast,
+        changeEmail: contextChangeEmail,
     } = useContext(AuthUIContext)
 
     localization = { ...contextLocalization, ...localization }
+    readonly = readonly ?? (contextChangeEmail === false)
 
     const { data: sessionData, isPending: sessionPending, refetch } = useSession()
     const [resendDisabled, setResendDisabled] = useState(false)
@@ -112,15 +116,15 @@ export function ChangeEmailCard({
     return (
         <>
             <Form {...form}>
-                <form noValidate onSubmit={form.handleSubmit(changeEmail)}>
+                <form noValidate onSubmit={readonly ? form.handleSubmit(changeEmail) : undefined}>
                     <SettingsCard
                         className={className}
                         classNames={classNames}
-                        description={localization.emailDescription}
-                        instructions={localization.emailInstructions}
+                        description={readonly ? undefined : localization.emailDescription}
+                        instructions={readonly ? undefined : localization.emailInstructions}
                         isPending={isPending || sessionPending}
                         title={localization.email}
-                        actionLabel={localization.save}
+                        actionLabel={readonly ? undefined : localization.save}
                     >
                         <CardContent className={classNames?.content}>
                             {isPending || sessionPending ? (
@@ -137,6 +141,7 @@ export function ChangeEmailCard({
                                                     placeholder={localization.emailPlaceholder}
                                                     type="email"
                                                     disabled={isSubmitting}
+                                                    readOnly={readonly}
                                                     {...field}
                                                 />
                                             </FormControl>
