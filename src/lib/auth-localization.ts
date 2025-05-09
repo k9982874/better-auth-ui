@@ -439,6 +439,9 @@ export const authLocalization = {
     /** @default "Go back" */
     goBack: "Go back",
 
+    /** @default "Invalid email or password" */
+    invalidEmailOrPassword: "Invalid email or password",
+
     /** @default "Invalid password" */
     passwordInvalid: "Invalid password",
 

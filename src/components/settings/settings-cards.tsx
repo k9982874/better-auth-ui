@@ -47,7 +47,6 @@ export function SettingsCards({ className, classNames, localization }: SettingsC
         additionalFields,
         avatar,
         credentials,
-        changeEmail,
         deleteUser,
         hooks,
         localization: contextLocalization,
@@ -157,7 +156,7 @@ export function SettingsCards({ className, classNames, localization }: SettingsC
                         />
                     )}
 
-                    {changeEmail && (
+                    {sessionPending && (
                         <ChangeEmailCard
                             classNames={classNames?.card}
                             isPending={sessionPending}
