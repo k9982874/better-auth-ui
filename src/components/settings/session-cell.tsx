@@ -33,7 +33,7 @@ export function SessionCell({
         mutators: { revokeSession },
         viewPaths,
         navigate,
-        toast
+        toast,
     } = useContext(AuthUIContext)
 
     localization = { ...contextLocalization, ...localization }
@@ -67,6 +67,13 @@ export function SessionCell({
     const parser = UAParser(session.userAgent as string)
     const isMobile = parser.device.type === "mobile"
 
+    let description = ""
+    if (parser.os.name && parser.browser.name) {
+        description = `${parser.os.name}, ${parser.browser.name}`
+    } else if (parser.os.name) {
+        description = parser.os.name
+    }
+
     return (
         <Card className={cn("flex-row items-center gap-3 px-4 py-3", className, classNames?.cell)}>
             {isMobile ? (
@@ -80,9 +87,11 @@ export function SessionCell({
                     {isCurrentSession ? localization.currentSession : session?.ipAddress}
                 </span>
 
-                <span className="text-muted-foreground text-xs">
-                    {parser.os.name}, {parser.browser.name}
-                </span>
+                {description.length > 0&& (
+                    <span className="text-muted-foreground text-xs">
+                        {description}
+                    </span>
+                )}
             </div>
 
             <Button

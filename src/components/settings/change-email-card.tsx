@@ -29,6 +29,7 @@ export function ChangeEmailCard({
 }: ChangeEmailCardProps) {
     const {
         authClient,
+        changeEmail,
         emailVerification,
         hooks: { useSession },
         localization: contextLocalization,
@@ -58,7 +59,7 @@ export function ChangeEmailCard({
 
     const { isSubmitting } = form.formState
 
-    const changeEmail = async ({ email }: z.infer<typeof formSchema>) => {
+    const changeEmailHandler = async ({ email }: z.infer<typeof formSchema>) => {
         if (email === sessionData?.user.email) {
             await new Promise((resolve) => setTimeout(resolve))
             toast({
@@ -89,7 +90,7 @@ export function ChangeEmailCard({
         }
     }
 
-    const resendVerification = async () => {
+    const resendVerificationHandler = async () => {
         if (!sessionData) return
         const email = sessionData.user.email
 
@@ -112,40 +113,48 @@ export function ChangeEmailCard({
     return (
         <>
             <Form {...form}>
-                <form noValidate onSubmit={form.handleSubmit(changeEmail)}>
+                <form noValidate onSubmit={changeEmail ? form.handleSubmit(changeEmailHandler) : undefined}>
                     <SettingsCard
                         className={className}
                         classNames={classNames}
-                        description={localization.emailDescription}
-                        instructions={localization.emailInstructions}
+                        description={changeEmail ? localization.emailDescription : undefined}
+                        instructions={changeEmail ? localization.emailInstructions : undefined}
                         isPending={isPending || sessionPending}
                         title={localization.email}
-                        actionLabel={localization.save}
+                        actionLabel={changeEmail ? localization.save : undefined}
                     >
                         <CardContent className={classNames?.content}>
                             {isPending || sessionPending ? (
                                 <Skeleton className={cn("h-9 w-full", classNames?.skeleton)} />
-                            ) : (
-                                <FormField
-                                    control={form.control}
-                                    name="email"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormControl>
-                                                <Input
-                                                    className={classNames?.input}
-                                                    placeholder={localization.emailPlaceholder}
-                                                    type="email"
-                                                    disabled={isSubmitting}
-                                                    {...field}
-                                                />
-                                            </FormControl>
+                            ) : (changeEmail ? (
+                                    <FormField
+                                        control={form.control}
+                                        name="email"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormControl>
+                                                    <Input
+                                                        className={classNames?.input}
+                                                        placeholder={localization.emailPlaceholder}
+                                                        type="email"
+                                                        disabled={isSubmitting}
+                                                        {...field}
+                                                    />
+                                                </FormControl>
 
-                                            <FormMessage className={classNames?.error} />
-                                        </FormItem>
-                                    )}
-                                />
-                            )}
+                                                <FormMessage className={classNames?.error} />
+                                            </FormItem>
+                                        )}
+                                    />
+                                ) : (
+                                    <Input
+                                        className={classNames?.input}
+                                        placeholder={localization.emailPlaceholder}
+                                        type="email"
+                                        readOnly
+                                    />
+                                ))
+                            }
                         </CardContent>
                     </SettingsCard>
                 </form>
@@ -153,7 +162,7 @@ export function ChangeEmailCard({
 
             {emailVerification && sessionData?.user && !sessionData?.user.emailVerified && (
                 <Form {...resendForm}>
-                    <form onSubmit={resendForm.handleSubmit(resendVerification)}>
+                    <form onSubmit={resendForm.handleSubmit(resendVerificationHandler)}>
                         <SettingsCard
                             className={className}
                             classNames={classNames}
