@@ -151,6 +151,7 @@ export function ChangeEmailCard({
                                         className={classNames?.input}
                                         placeholder={localization.emailPlaceholder}
                                         type="email"
+                                        value={sessionData?.user.email || ""}
                                         readOnly
                                     />
                                 ))

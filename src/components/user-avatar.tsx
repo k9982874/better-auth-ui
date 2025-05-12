@@ -1,10 +1,11 @@
 import { UserIcon } from "lucide-react"
-import type { ComponentProps } from "react"
+import { useContext, type ComponentProps } from "react"
 
 import { cn } from "../lib/utils"
 import type { Profile } from "../types/profile"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { Skeleton } from "./ui/skeleton"
+import { AuthUIContext } from "../lib/auth-ui-provider"
 
 export interface UserAvatarClassNames {
     base?: string
@@ -35,8 +36,20 @@ export function UserAvatar({
     isPending,
     ...props
 }: UserAvatarProps & ComponentProps<typeof Avatar>) {
+    const {
+        defaultAvatarURL
+    } = useContext(AuthUIContext)
+
     const name = user?.name || user?.fullName || user?.firstName || user?.email
-    const src = user?.image || user?.avatar || user?.avatarUrl
+
+    let src = user?.image || user?.avatar || user?.avatarUrl
+    if (!src) {
+        if (typeof defaultAvatarURL === "function") {
+            src = defaultAvatarURL(user);
+        } else if (typeof defaultAvatarURL === "string") {
+            src = defaultAvatarURL
+        }
+    }
 
     if (isPending) {
         return (

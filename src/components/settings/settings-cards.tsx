@@ -156,13 +156,11 @@ export function SettingsCards({ className, classNames, localization }: SettingsC
                         />
                     )}
 
-                    {sessionPending && (
-                        <ChangeEmailCard
-                            classNames={classNames?.card}
-                            isPending={sessionPending}
-                            localization={localization}
-                        />
-                    )}
+                    <ChangeEmailCard
+                        classNames={classNames?.card}
+                        isPending={sessionPending}
+                        localization={localization}
+                    />
 
                     {settingsFields?.map((field) => {
                         const additionalField = additionalFields?.[field]
