@@ -1,7 +1,7 @@
 "use client"
 
 import type { Session } from "better-auth"
-import { LaptopIcon, Loader2, SmartphoneIcon } from "lucide-react"
+import { Gamepad2Icon, LaptopIcon, Loader2, SmartphoneIcon, TabletIcon, Tv2Icon, WatchIcon } from "lucide-react"
 import { useContext, useState } from "react"
 import { UAParser } from "ua-parser-js"
 import type { AuthLocalization } from "../../lib/auth-localization"
@@ -10,6 +10,7 @@ import { cn, getLocalizedError } from "../../lib/utils"
 import { Button } from "../ui/button"
 import { Card } from "../ui/card"
 import type { SettingsCardClassNames } from "./shared/settings-card"
+import type { UserAgent } from "../../types/user-agent"
 
 export interface SessionCellProps {
     className?: string
@@ -34,6 +35,7 @@ export function SessionCell({
         viewPaths,
         navigate,
         toast,
+        UAParser: UAParserFunc,
     } = useContext(AuthUIContext)
 
     localization = { ...contextLocalization, ...localization }
@@ -64,23 +66,61 @@ export function SessionCell({
         }
     }
 
-    const parser = UAParser(session.userAgent as string)
-    const isMobile = parser.device.type === "mobile"
+    let userAgent: UserAgent | undefined
+    if (session.userAgent) {
+        if (UAParserFunc) {
+            userAgent = UAParserFunc(session.userAgent as string)
+        }
+
+        if (userAgent === undefined) {
+            const result = UAParser(session.userAgent as string)
+            userAgent = {
+                type: result.device.type,
+                vendor: result.device.vendor,
+                model: result.device.model,
+                info: {
+                    osName: result.os.name,
+                    osVersion: result.os.version,
+                    appName: result.browser.name,
+                    appVersion: result.browser.version,
+                }
+            }
+        }
+    }
 
     let description = ""
-    if (parser.os.name && parser.browser.name) {
-        description = `${parser.os.name}, ${parser.browser.name}`
-    } else if (parser.os.name) {
-        description = parser.os.name
+    if (userAgent) {
+        if (typeof userAgent.info === "string") {
+            description = userAgent.info
+        } else {
+            if (userAgent.info?.osName && userAgent.info?.appName) {
+                description = `${userAgent.info.osName}, ${userAgent.info.appName}`
+            } else if (userAgent.info?.osName) {
+                description = userAgent.info.osName
+            } else if (userAgent.info?.appName) {
+                description = userAgent.info.appName
+            }
+        }
+    }
+
+    let icon: React.ReactNode
+    if (userAgent?.type === "mobile") {
+        icon = <SmartphoneIcon className={cn("size-4", classNames?.icon)} />
+    } else if (userAgent?.type === "tablet") {
+        icon = <TabletIcon className={cn("size-4", classNames?.icon)} />
+    } else if (userAgent?.type === "smarttv") {
+        icon = <Tv2Icon className={cn("size-4", classNames?.icon)} />
+    } else if (userAgent?.type === "wearable") {
+        icon = <WatchIcon className={cn("size-4", classNames?.icon)} />
+    } else if (userAgent?.type === "console") {
+        icon = <Gamepad2Icon className={cn("size-4", classNames?.icon)} />
+    } else {
+        icon = <LaptopIcon className={cn("size-4", classNames?.icon)} />
     }
 
     return (
         <Card className={cn("flex-row items-center gap-3 px-4 py-3", className, classNames?.cell)}>
-            {isMobile ? (
-                <SmartphoneIcon className={cn("size-4", classNames?.icon)} />
-            ) : (
-                <LaptopIcon className={cn("size-4", classNames?.icon)} />
-            )}
+            {icon}
 
             <div className="flex flex-col">
                 <span className="font-semibold text-sm">

@@ -16,6 +16,7 @@ import { type AuthLocalization, authLocalization } from "./auth-localization"
 import { type AuthViewPaths, authViewPaths } from "./auth-view-paths"
 import type { Provider } from "./social-providers"
 import type { Profile } from "../types/profile"
+import type { UserAgent } from "../types/user-agent"
 
 const DefaultLink: Link = ({ href, className, children }) => (
     <a className={className} href={href}>
@@ -267,10 +268,12 @@ export type AuthUIContextType = {
     passwordValidation?: PasswordValidation
     /**
      * Default Avatar URL
-     * @default undefined
-     * @remarks `(file: File) => Promise<string>`
      */
     defaultAvatarURL?: string | ((user?: Profile) => string | undefined)
+    /**
+     * Parse a User Agent string into an UserAgent object
+     */
+    UAParser?: (userAgent: string) => UserAgent | undefined
 }
 
 export type AuthUIProviderProps = {
@@ -308,6 +311,7 @@ export type AuthUIProviderProps = {
     mutators?: Partial<AuthMutators>
     passwordValidation?: PasswordValidation
     defaultAvatarURL?: string | ((user?: Profile) => string | undefined)
+    UAParser?: (userAgent: string) => UserAgent | undefined
 } & Partial<Omit<AuthUIContextType, "viewPaths" | "localization" | "mutators" | "toast" | "hooks">>
 
 export const AuthUIContext = createContext<AuthUIContextType>({} as unknown as AuthUIContextType)
