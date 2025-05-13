@@ -1,0 +1,81 @@
+name: Create release package
+
+description: |
+  Create (and release) a new version
+
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release (ex. `0.1.0`)
+        required: false
+        type: string
+
+  push:
+    branches:
+      # Run on all commits to main, because GitHub somehow doesn't support only specifying tag patterns
+      # (filtering must be done at the per-job level with an `if`)
+      # - main
+      # Run on auto-generated release PRs
+      - pre-v[0-9]+\.[0-9]+\.[0-9]+
+    tags:
+      # Run on released tags (created by automated post-merge release-tagging), to generate the actual release
+      - v[0-9]+\.[0-9]+\.[0-9]+
+
+jobs:
+  # Build job
+  build:
+    runs-on: ubuntu-latest
+    env:
+      pkg-name: "better-auth-ui-${{ inputs.version || github.ref_name }}"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: pnpm-setup
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: package.json
+      - name: Detect package manager
+        id: detect-package-manager
+        run: |
+          if [ -f "yarn.lock" ]; then
+            echo "manager=yarn" >> $GITHUB_OUTPUT
+            echo "command=install" >> $GITHUB_OUTPUT
+            echo "runner=yarn" >> $GITHUB_OUTPUT
+            exit 0
+          elif [ -f "package-lock.json" ]; then
+            echo "manager=npm" >> $GITHUB_OUTPUT
+            echo "command=ci" >> $GITHUB_OUTPUT
+            echo "runner=npx --no-install" >> $GITHUB_OUTPUT
+            exit 0
+          elif [ -f "pnpm-lock.yaml" ]; then
+            echo "manager=pnpm" >> $GITHUB_OUTPUT
+            echo "command=install" >> $GITHUB_OUTPUT
+            echo "runner=pnpm" >> $GITHUB_OUTPUT
+            exit 0
+          else
+            echo "Unable to determine package manager"
+            exit 1
+          fi
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache-dependency-path: pnpm-lock.yaml
+          cache: ${{ steps.detect-package-manager.outputs.manager }}
+      - name: Install dependencies
+        run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
+      - name: Build with Next.js
+        run: ${{ steps.detect-package-manager.outputs.runner }} pnpm prepublishOnly
+      - name: Create tarball
+        run: |
+          mkdir package && \
+          cp -r dist src package.json README.md LICENSE package && \
+          tar cvf ${{ env.pkg-name }}.tar.gz package
+      - name: Upload artifact
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          files: |
+            ./${{ env.pkg-name }}.tar.gz
